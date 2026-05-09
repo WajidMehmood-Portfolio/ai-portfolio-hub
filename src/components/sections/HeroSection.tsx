@@ -99,9 +99,13 @@ export const HeroSection: React.FC = () => {
               <Button size="lg" className="gap-2">
                 View My Work <ArrowRight size={18} />
               </Button>
-              <Button variant="ghost" size="lg" className="gap-2">
+              <a 
+                href="/Wajid_Mehmood_CV.pdf" 
+                download="Wajid_Mehmood_CV.pdf"
+                className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-[#111118] border border-[#1E1E2E] text-[#F1F0FF] font-semibold hover:border-[#7C3AED]/50 transition-all gap-2"
+              >
                 Download CV <Download size={18} />
-              </Button>
+              </a>
             </motion.div>
 
             {/* Scroll Indicator */}

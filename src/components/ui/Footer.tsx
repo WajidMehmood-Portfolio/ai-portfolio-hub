@@ -1,6 +1,6 @@
 // src/components/ui/Footer.tsx
 import React from 'react';
-import { Linkedin, Github, Twitter, Mail } from 'lucide-react';
+import { Linkedin, Github, Mail } from 'lucide-react';
 
 import { SOCIAL_URLS } from '../../lib/constants';
 
@@ -21,16 +21,21 @@ export const Footer: React.FC = () => {
           {[
             { icon: Linkedin, label: 'LinkedIn', href: SOCIAL_URLS.linkedin },
             { icon: Github, label: 'GitHub', href: SOCIAL_URLS.github },
-            { icon: Twitter, label: 'Twitter', href: SOCIAL_URLS.twitter },
             { icon: Mail, label: 'Email', href: SOCIAL_URLS.email },
           ].map((social) => (
             <a
               key={social.label}
               href={social.href}
-              className="text-[#6B6880] hover:text-[#F1F0FF] hover:scale-110 transition-all"
+              target={social.href.startsWith('mailto') ? undefined : '_blank'}
+              rel={social.href.startsWith('mailto') ? undefined : 'noopener noreferrer'}
+              className="group text-[#6B6880] hover:text-[#F1F0FF] hover:scale-110 transition-all duration-300 transform"
               aria-label={social.label}
+              title={social.label}
             >
-              <social.icon size={20} />
+              <div className="relative">
+                <social.icon size={20} className="relative z-10" />
+                <div className="absolute inset-0 bg-[#7C3AED] opacity-0 group-hover:opacity-20 blur-md transition-opacity rounded-full" />
+              </div>
             </a>
           ))}
         </div>

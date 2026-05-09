@@ -2,6 +2,7 @@
 import React from 'react';
 import { NavBar } from '../components/ui/NavBar';
 import { Footer } from '../components/ui/Footer';
+import { ChatBot } from '../components/ui/ChatBot';
 import { ScrollProgress } from '../components/animations/ScrollProgress';
 import { initializeChartDefaults } from '../lib/chartDefaults';
 import './globals.css';
@@ -22,6 +23,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         {children}
       </main>
       <Footer />
+      <ChatBot />
     </div>
   );
 };

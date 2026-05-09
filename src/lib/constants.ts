@@ -18,8 +18,7 @@ export const NAV_LINKS: NavLink[] = [
 ];
 
 export const SOCIAL_URLS = {
-  github: 'https://github.com/yourusername',
+  github: 'https://github.com/WajidMehmood-Portfolio',
   linkedin: 'https://www.linkedin.com/in/wajidmehmood/',
-  twitter: 'https://twitter.com/yourusername',
   email: 'mailto:wajidmehmood074@gmail.com',
 };

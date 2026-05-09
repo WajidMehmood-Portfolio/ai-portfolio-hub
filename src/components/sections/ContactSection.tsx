@@ -7,7 +7,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { motion } from 'motion/react';
-import { Send, Mail, MapPin, Linkedin, Github, Twitter, CheckCircle2 } from 'lucide-react';
+import { Send, Mail, MapPin, Linkedin, Github, CheckCircle2 } from 'lucide-react';
 import { SOCIAL_URLS } from '../../lib/constants';
 
 const contactSchema = z.object({
@@ -22,6 +22,7 @@ type ContactFormData = z.infer<typeof contactSchema>;
 export const ContactSection: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [isError, setIsError] = useState(false);
 
   const {
     register,
@@ -34,13 +35,37 @@ export const ContactSection: React.FC = () => {
 
   const onSubmit = async (data: ContactFormData) => {
     setIsSubmitting(true);
-    console.log('Form data:', data);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    setIsSubmitting(false);
-    setIsSuccess(true);
-    reset();
-    setTimeout(() => setIsSuccess(false), 5000);
+    setIsError(false);
+    
+    // Show alert before redirect
+    alert("Opening WhatsApp to send your message...");
+
+    try {
+      // Build WhatsApp message
+      const waMessage = encodeURIComponent(
+        '🚀 New Portfolio Inquiry!' + '\n\n' +
+        '👤 Name: ' + data.name + '\n' +
+        '📧 Email: ' + data.email + '\n' +
+        '📌 Subject: ' + data.subject + '\n\n' +
+        '💬 Message:' + '\n' + data.message
+      );
+      
+      // Open WhatsApp
+      window.open('https://wa.me/923260023261?text=' + waMessage, '_blank');
+      
+      setIsSuccess(true);
+      reset();
+      alert('✅ Redirecting to WhatsApp!');
+    } catch (error) {
+      console.error("Submission error:", error);
+      setIsError(true);
+    } finally {
+      setIsSubmitting(false);
+      setTimeout(() => {
+        setIsSuccess(false);
+        setIsError(false);
+      }, 5000);
+    }
   };
 
   const contactInfo = [
@@ -51,7 +76,6 @@ export const ContactSection: React.FC = () => {
   const socialLinks = [
     { icon: Linkedin, href: SOCIAL_URLS.linkedin, label: 'LinkedIn' },
     { icon: Github, href: SOCIAL_URLS.github, label: 'GitHub' },
-    { icon: Twitter, href: SOCIAL_URLS.twitter, label: 'Twitter' },
   ];
 
   return (
@@ -98,10 +122,14 @@ export const ContactSection: React.FC = () => {
                 <a
                   key={social.label}
                   href={social.href}
-                  className="w-10 h-10 rounded-lg bg-[#111118] border border-[#1E1E2E] flex items-center justify-center text-[#6B6880] hover:text-[#F1F0FF] hover:border-[#7C3AED]/40 transition-all"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group w-10 h-10 rounded-lg bg-[#111118] border border-[#1E1E2E] flex items-center justify-center text-[#6B6880] hover:text-[#F1F0FF] hover:border-[#7C3AED]/40 hover:scale-110 transition-all duration-300 relative overflow-hidden"
                   aria-label={social.label}
+                  title={social.label}
                 >
-                  <social.icon size={20} />
+                  <social.icon size={20} className="relative z-10" />
+                  <div className="absolute inset-0 bg-[#7C3AED] opacity-0 group-hover:opacity-10 blur-xl transition-opacity duration-300" />
                 </a>
               ))}
             </div>
@@ -120,11 +148,16 @@ export const ContactSection: React.FC = () => {
                 <div className="w-20 h-20 rounded-full bg-[#10B981]/10 border border-[#10B981]/30 flex items-center justify-center text-[#10B981] mb-6">
                   <CheckCircle2 size={40} />
                 </div>
-                <h3 className="text-2xl font-bold text-[#F1F0FF] mb-2">Message Received!</h3>
+                <h3 className="text-2xl font-bold text-[#F1F0FF] mb-2">✅ Message Sent!</h3>
                 <p className="text-[#6EE7B7] font-medium">I'll get back to you within 24 hours.</p>
               </motion.div>
             ) : (
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                {isError && (
+                  <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-sm font-medium mb-4">
+                    ❌ Something went wrong. Please try again or contact me directly via email.
+                  </div>
+                )}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-[#6B6880] uppercase tracking-widest">Your Name</label>
@@ -174,7 +207,10 @@ export const ContactSection: React.FC = () => {
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? (
-                    <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <>
+                      <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Sending...
+                    </>
                   ) : (
                     <>Send Message <Send size={18} /></>
                   )}

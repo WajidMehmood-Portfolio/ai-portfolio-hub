@@ -1,6 +1,6 @@
 // src/components/hero/OrbitSystem.tsx
-import React from 'react';
-import { motion, useReducedMotion } from 'motion/react';
+import React, { useState } from 'react';
+import { motion, useReducedMotion, useMotionValue, useSpring, useTransform } from 'motion/react';
 import { techStack, TechIcon } from '../../data/techStack';
 import { cn } from '../../lib/utils';
 
@@ -38,16 +38,20 @@ interface OrbitRingProps {
   direction: 'clockwise' | 'counter-clockwise';
   icons: TechIcon[];
   ringColor: string;
+  parentRotation: any; // Use any for simplicity with MotionValue
 }
 
-const OrbitRing: React.FC<OrbitRingProps> = ({ radius, duration, direction, icons, ringColor }) => {
+const OrbitRing: React.FC<OrbitRingProps> = ({ radius, duration, direction, icons, ringColor, parentRotation }) => {
   const shouldReduceMotion = useReducedMotion();
   
+  // Create a negative version of parent rotation to counter it
+  const counterParentRotation = useTransform(parentRotation, (v: number) => -v);
+
   return (
     <div className="absolute inset-0 flex items-center justify-center">
       {/* Visual Ring */}
       <div 
-        className="absolute border border-dashed rounded-full"
+        className="absolute border border-dashed rounded-full pointer-events-none"
         style={{ 
           width: radius * 2, 
           height: radius * 2, 
@@ -94,6 +98,7 @@ const OrbitRing: React.FC<OrbitRingProps> = ({ radius, duration, direction, icon
                   repeat: Infinity, 
                   ease: "linear" 
                 }}
+                style={{ rotate: counterParentRotation }}
               >
                 <IconNode icon={icon} />
               </motion.div>
@@ -105,7 +110,13 @@ const OrbitRing: React.FC<OrbitRingProps> = ({ radius, duration, direction, icon
   );
 };
 
-const CenterNode: React.FC = () => {
+interface CenterNodeProps {
+  parentRotation: any;
+}
+
+const CenterNode: React.FC<CenterNodeProps> = ({ parentRotation }) => {
+  const counterRotation = useTransform(parentRotation, (v: number) => -v);
+  
   return (
     <motion.div
       animate={{ 
@@ -117,6 +128,7 @@ const CenterNode: React.FC = () => {
         ]
       }}
       transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+      style={{ rotate: counterRotation }}
       className="z-10 w-24 h-24 rounded-full bg-[#111118] border-2 border-[#7C3AED]/30 flex items-center justify-center relative overflow-hidden"
     >
       <div className="absolute inset-0 bg-[#7C3AED]/5 animate-pulse" />
@@ -135,10 +147,33 @@ export const OrbitSystem: React.FC<OrbitSystemProps> = ({ scale = 1 }) => {
   const innerIcons = techStack.filter(i => i.ring === 'inner');
   const outerIcons = techStack.filter(i => i.ring === 'outer');
 
+  const rotation = useMotionValue(0);
+  const springRotation = useSpring(rotation, {
+    stiffness: 100,
+    damping: 30,
+    restDelta: 0.001
+  });
+
+  const [isDragging, setIsDragging] = useState(false);
+
   return (
-    <div 
-      className="relative w-[450px] h-[450px] flex items-center justify-center overflow-visible"
-      style={{ transform: `scale(${scale})` }}
+    <motion.div 
+      className={cn(
+        "relative w-[450px] h-[450px] flex items-center justify-center overflow-visible select-none",
+        isDragging ? "cursor-grabbing" : "cursor-grab"
+      )}
+      style={{ 
+        transformOrigin: "center center",
+        scale,
+        rotate: springRotation 
+      }}
+      onPanStart={() => setIsDragging(true)}
+      onPanEnd={() => setIsDragging(false)}
+      onPan={(_, info) => {
+        // Map horizontal movement to rotation
+        const sensitivity = 0.5;
+        rotation.set(rotation.get() + info.delta.x * sensitivity);
+      }}
       aria-label="Technology Stack Orbit System"
       role="img"
     >
@@ -148,6 +183,7 @@ export const OrbitSystem: React.FC<OrbitSystemProps> = ({ scale = 1 }) => {
         direction="clockwise" 
         icons={innerIcons} 
         ringColor="#7C3AED" 
+        parentRotation={springRotation}
       />
       <OrbitRing 
         radius={210} 
@@ -155,9 +191,10 @@ export const OrbitSystem: React.FC<OrbitSystemProps> = ({ scale = 1 }) => {
         direction="counter-clockwise" 
         icons={outerIcons} 
         ringColor="#06B6D4" 
+        parentRotation={springRotation}
       />
-      <CenterNode />
-    </div>
+      <CenterNode parentRotation={springRotation} />
+    </motion.div>
   );
 };
 

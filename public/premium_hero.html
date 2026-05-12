@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>W.M | Futuristic Portfolio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0A0A0F;
+            --cyan: #00D4FF;
+            --violet: #7C3AED;
+            --mint: #00FF88;
+            --text-main: #F1F0FF;
+            --text-dim: #A09DB8;
+            --glass: rgba(16, 16, 24, 0.6);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            cursor: none;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at center, rgba(124, 58, 237, 0.1) 0%, transparent 60%),
+                repeating-linear-gradient(rgba(0, 212, 255, 0.05) 0 1px, transparent 1px 40px),
+                repeating-linear-gradient(90deg, rgba(0, 212, 255, 0.05) 0 1px, transparent 1px 40px);
+        }
+
+        /* Ambient Glow Blobs */
+        .glow-blob {
+            position: fixed;
+            width: 40vw;
+            height: 40vw;
+            border-radius: 50%;
+            filter: blur(100px);
+            z-index: -1;
+            opacity: 0.4;
+            pointer-events: none;
+        }
+        .glow-cyan { top: -10%; left: -10%; background: var(--cyan); }
+        .glow-violet { bottom: -10%; right: -10%; background: var(--violet); }
+
+        #particle-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .hero-container {
+            position: relative;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            z-index: 1;
+        }
+
+        /* Center Orbit System */
+        .hub-system {
+            position: relative;
+            width: 600px;
+            height: 600px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 2rem;
+        }
+
+        .hub-rings {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .ring {
+            position: absolute;
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .ring-halo { width: 100px; height: 100px; box-shadow: 0 0 50px rgba(0, 212, 255, 0.2); }
+        .ring-dashed { 
+            width: 160px; height: 160px; 
+            border: 2px dashed rgba(0, 212, 255, 0.3);
+            animation: pulse-ring 4s infinite linear;
+        }
+        .ring-inner-track { width: 320px; height: 320px; border: 1px solid rgba(255, 255, 255, 0.1); }
+        .ring-outer-track { width: 520px; height: 520px; border: 1px solid rgba(255, 255, 255, 0.05); }
+
+        @keyframes pulse-ring {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(1.05); }
+        }
+
+        .center-badge {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 212, 255, 0.5);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            font-size: 1.5rem;
+            color: var(--cyan);
+            box-shadow: 0 0 30px rgba(0, 212, 255, 0.4);
+            animation: badge-breathe 3s infinite ease-in-out, badge-rotate 20s infinite linear;
+            z-index: 10;
+        }
+
+        .center-badge span {
+            animation: badge-counter-rotate 20s infinite linear;
+        }
+
+        @keyframes badge-breathe {
+            0%, 100% { box-shadow: 0 0 20px rgba(0, 212, 255, 0.4); }
+            50% { box-shadow: 0 0 40px rgba(0, 212, 255, 0.7); }
+        }
+        @keyframes badge-rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes badge-counter-rotate { from { transform: rotate(0deg); } to { transform: rotate(-360deg); } }
+
+        /* Orbit Logic */
+        .orbit-container {
+            position: absolute;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            will-change: transform;
+        }
+
+        .orbit-inner {
+            width: 320px;
+            height: 320px;
+            animation: rotate-cw 25s infinite linear;
+        }
+
+        .orbit-outer {
+            width: 520px;
+            height: 520px;
+            animation: rotate-ccw 40s infinite linear;
+        }
+
+        @keyframes rotate-cw { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes rotate-ccw { from { transform: rotate(0deg); } to { transform: rotate(-360deg); } }
+
+        .orbit-item {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            left: calc(50% - 25px);
+            top: calc(50% - 25px);
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: auto;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), border-color 0.3s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+
+        .orbit-item:hover {
+            transform: scale(1.3) !important;
+            border-color: var(--cyan);
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
+            z-index: 100;
+        }
+
+        .orbit-inner .orbit-item { animation: rotate-ccw 25s infinite linear; }
+        .orbit-outer .orbit-item { animation: rotate-cw 40s infinite linear; }
+
+        .orbit-item.paused, .orbit-container.paused {
+            animation-play-state: paused !important;
+        }
+
+        /* Tooltip */
+        .tooltip {
+            position: absolute;
+            bottom: 120%;
+            left: 50%;
+            transform: translateX(-50%) translateY(10px);
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--cyan);
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 10px;
+            color: var(--cyan);
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s;
+        }
+
+        .orbit-item:hover .tooltip {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* Hero Text */
+        .hero-content {
+            text-align: center;
+            max-width: 800px;
+        }
+
+        .label {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 12px;
+            letter-spacing: 4px;
+            color: var(--mint);
+            margin-bottom: 0.5rem;
+            opacity: 0.8;
+            text-transform: uppercase;
+        }
+
+        .heading {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 5rem;
+            font-weight: 900;
+            line-height: 1;
+            margin-bottom: 1rem;
+            background: linear-gradient(to bottom, #fff, rgba(255,255,255,0.5));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 20px rgba(0, 212, 255, 0.3));
+        }
+
+        .typewriter-container {
+            height: 30px;
+            margin-bottom: 1.5rem;
+            font-size: 1.25rem;
+            font-weight: 300;
+            color: var(--cyan);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+
+        .cursor {
+            width: 2px;
+            height: 20px;
+            background: var(--cyan);
+            animation: blink 0.8s infinite;
+        }
+
+        @keyframes blink { 50% { opacity: 0; } }
+
+        .divider {
+            width: 150px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+            margin: 2rem auto;
+            position: relative;
+        }
+
+        .divider::after {
+            content: '';
+            position: absolute;
+            top: -3px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 8px;
+            height: 8px;
+            background: var(--cyan);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--cyan);
+        }
+
+        .bio {
+            color: var(--text-dim);
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 2.5rem;
+            padding: 0 1rem;
+        }
+
+        /* Buttons */
+        .btn-group {
+            display: flex;
+            gap: 1.5rem;
+            justify-content: center;
+        }
+
+        .btn {
+            position: relative;
+            padding: 1rem 2.5rem;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-decoration: none;
+            border: 1px solid var(--cyan);
+            color: #fff;
+            background: transparent;
+            overflow: hidden;
+            transition: all 0.4s;
+            z-index: 1;
+        }
+
+        .btn-primary { border-color: var(--cyan); }
+        .btn-secondary { border-color: var(--violet); }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: 0.5s;
+            z-index: -1;
+        }
+
+        .btn:hover::before { left: 100%; }
+
+        .btn-primary:hover {
+            background: var(--cyan);
+            color: var(--bg);
+            box-shadow: 0 0 30px var(--cyan);
+        }
+
+        .btn-secondary:hover {
+            background: var(--violet);
+            color: #fff;
+            box-shadow: 0 0 30px var(--violet);
+        }
+
+        /* Social Links */
+        .social-links {
+            position: absolute;
+            right: 3rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .social-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-dim);
+            transition: all 0.3s;
+            text-decoration: none;
+        }
+
+        .social-btn:hover {
+            color: var(--cyan);
+            border-color: var(--cyan);
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.4);
+            transform: scale(1.1);
+        }
+
+        /* Cursor */
+        #cursor-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--cyan);
+            position: fixed;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+        }
+
+        #cursor-ring {
+            width: 40px;
+            height: 40px;
+            border: 2px solid var(--cyan);
+            position: fixed;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9998;
+            transform: translate(-50%, -50%);
+            transition: width 0.2s, height 0.2s, border-color 0.2s, border-width 0.2s;
+        }
+
+        /* Scroll Indicator */
+        .scroll-indicator {
+            position: absolute;
+            bottom: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-dim);
+            font-size: 10px;
+            font-family: 'Orbitron', sans-serif;
+            letter-spacing: 3px;
+        }
+
+        .scroll-line {
+            width: 1px;
+            height: 40px;
+            background: rgba(255,255,255,0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .scroll-line::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--mint);
+            animation: scroll-anim 2s infinite ease-in-out;
+        }
+
+        @keyframes scroll-anim {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(100%); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hub-system { width: 400px; height: 400px; }
+            .ring-inner-track { width: 220px; height: 220px; }
+            .ring-outer-track { width: 340px; height: 340px; }
+            .orbit-inner { width: 220px; height: 220px; }
+            .orbit-outer { width: 340px; height: 340px; }
+            .center-badge { width: 60px; height: 60px; font-size: 1.2rem; }
+            .heading { font-size: 3.5rem; }
+            .social-links { 
+                position: relative; 
+                flex-direction: row; 
+                right: auto; 
+                top: auto; 
+                transform: none;
+                margin-top: 2rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .orbit-outer, .ring-outer-track { display: none; }
+            .hub-system { width: 300px; height: 300px; }
+            .ring-inner-track { width: 180px; height: 180px; }
+            .orbit-inner { width: 180px; height: 180px; }
+            .btn-group { flex-direction: column; width: 100%; max-width: 300px; margin: 0 auto; }
+            .heading { font-size: 2.8rem; }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="particle-canvas"></canvas>
+    <div class="glow-blob glow-cyan"></div>
+    <div class="glow-blob glow-violet"></div>
+
+    <!-- Custom Cursor -->
+    <div id="cursor-dot"></div>
+    <div id="cursor-ring"></div>
+
+    <div class="hero-container">
+        <!-- Center Hub System -->
+        <div class="hub-system">
+            <div class="hub-rings">
+                <div class="ring ring-halo"></div>
+                <div class="ring ring-dashed"></div>
+                <div class="ring ring-inner-track"></div>
+                <div class="ring ring-outer-track"></div>
+            </div>
+            
+            <div class="center-badge">
+                <span>WM</span>
+            </div>
+
+            <!-- Inner Orbit -->
+            <div class="orbit-container orbit-inner">
+                <!-- Flutter -->
+                <div class="orbit-item" style="transform: rotate(0deg) translate(110px) rotate(0deg);" data-label="Flutter">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-svg" style="color: var(--cyan);">
+                        <path d="M11 2L2 11l9 9" />
+                        <path d="M21 2l-9 9 9 9" />
+                    </svg>
+                    <div class="tooltip">Flutter</div>
+                </div>
+                <!-- Python -->
+                <div class="orbit-item" style="transform: rotate(120deg) translate(110px) rotate(-120deg);" data-label="Python">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #3776ab;">
+                        <path d="M12 2c5.5 0 10 4.5 10 10s-4.5 10-10 10S2 17.5 2 12 6.5 2 12 2z" />
+                        <path d="M8 12c0-2.2 1.8-4 4-4s4 1.8 4 4-1.8 4-4 4-4-1.8-4-4z" />
+                    </svg>
+                    <div class="tooltip">Python</div>
+                </div>
+                <!-- GitHub -->
+                <div class="orbit-item" style="transform: rotate(240deg) translate(110px) rotate(-240deg);" data-label="GitHub">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" />
+                    </svg>
+                    <div class="tooltip">GitHub</div>
+                </div>
+            </div>
+
+            <!-- Outer Orbit -->
+            <div class="orbit-container orbit-outer">
+                <!-- TensorFlow -->
+                <div class="orbit-item" style="transform: rotate(0deg) translate(170px) rotate(0deg);" data-label="TensorFlow">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #ff6f00;">
+                        <path d="M12 2v20" /><path d="M2 12h20" /><rect x="6" y="6" width="12" height="12" rx="2" />
+                    </svg>
+                    <div class="tooltip">TensorFlow</div>
+                </div>
+                <!-- Figma -->
+                <div class="orbit-item" style="transform: rotate(72deg) translate(170px) rotate(-72deg);" data-label="Figma">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #F24E1E;">
+                        <path d="M5 5.5A3.5 3.5 0 0 1 8.5 2H12v7H8.5A3.5 3.5 0 0 1 5 5.5z" />
+                        <path d="M12 2h3.5a3.5 3.5 0 0 1 0 7H12V2z" />
+                        <path d="M5 12.5A3.5 3.5 0 0 1 8.5 9H12v7H8.5A3.5 3.5 0 0 1 5 12.5z" />
+                        <path d="M5 19.5A3.5 3.5 0 0 1 8.5 16H12v3.5a3.5 3.5 0 1 1-7 0z" />
+                        <path d="M12 9h3.5a3.5 3.5 0 1 1-3.5 3.5V9z" />
+                    </svg>
+                    <div class="tooltip">Figma</div>
+                </div>
+                <!-- Colab -->
+                <div class="orbit-item" style="transform: rotate(144deg) translate(170px) rotate(-144deg);" data-label="Google Colab">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #f9ab00;">
+                        <circle cx="8" cy="12" r="4" /><circle cx="16" cy="12" r="4" />
+                        <path d="M8 8a4 4 0 0 1 8 0m-8 8a4 4 0 0 0 8 0" />
+                    </svg>
+                    <div class="tooltip">Colab</div>
+                </div>
+                <!-- Neural AI -->
+                <div class="orbit-item" style="transform: rotate(216deg) translate(170px) rotate(-216deg);" data-label="AI Engineering">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--mint);">
+                        <path d="M12 2v4m0 12v4M2 12h4m12 0h4" />
+                        <circle cx="12" cy="12" r="3" />
+                        <path d="M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83" />
+                    </svg>
+                    <div class="tooltip">AI Models</div>
+                </div>
+                <!-- Firebase -->
+                <div class="orbit-item" style="transform: rotate(288deg) translate(170px) rotate(-288deg);" data-label="Firebase">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #FFCA28;">
+                        <path d="M4 17L12 2l8 15" /><path d="M2 19h20L12 5" />
+                    </svg>
+                    <div class="tooltip">Firebase</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hero Content -->
+        <div class="hero-content">
+            <div class="label">Developer Ecosystem</div>
+            <h1 class="heading">WAJID.M</h1>
+            <div class="typewriter-container">
+                <span id="typewriter"></span>
+                <span class="cursor"></span>
+            </div>
+
+            <div class="bio">
+                Building intelligent systems at the intersection of AI, mobile development, and human-centered design.
+            </div>
+
+            <div class="btn-group">
+                <a href="#projects" class="btn btn-primary">View Projects</a>
+                <a href="#contact" class="btn btn-secondary">Contact Me</a>
+            </div>
+        </div>
+
+        <!-- Socials -->
+        <div class="social-links">
+            <a href="#" class="social-btn" title="GitHub">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" />
+                </svg>
+            </a>
+            <a href="#" class="social-btn" title="LinkedIn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" /><rect x="2" y="9" width="4" height="12" /><circle cx="4" cy="4" r="2" />
+                </svg>
+            </a>
+        </div>
+
+        <!-- Scroll Indicator -->
+        <div class="scroll-indicator">
+            SCROLL
+            <div class="scroll-line"></div>
+        </div>
+    </div>
+
+    <script>
+        // Particle System
+        const canvas = document.getElementById('particle-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        let mouse = { x: null, y: null, radius: 150 };
+
+        window.addEventListener('mousemove', (e) => {
+            mouse.x = e.x;
+            mouse.y = e.y;
+            
+            // Custom cursor movement
+            document.getElementById('cursor-dot').style.left = e.x + 'px';
+            document.getElementById('cursor-dot').style.top = e.y + 'px';
+            
+            // Smooth lagged ring
+            setTimeout(() => {
+                document.getElementById('cursor-ring').style.left = e.x + 'px';
+                document.getElementById('cursor-ring').style.top = e.y + 'px';
+            }, 50);
+        });
+
+        // Hover states for cursor
+        document.querySelectorAll('.orbit-item, .btn, .social-btn').forEach(el => {
+            el.addEventListener('mouseenter', () => {
+                document.getElementById('cursor-ring').style.borderColor = 'var(--violet)';
+                document.getElementById('cursor-ring').style.width = '60px';
+                document.getElementById('cursor-ring').style.height = '60px';
+                document.getElementById('cursor-ring').style.borderWidth = '1px';
+            });
+            el.addEventListener('mouseleave', () => {
+                document.getElementById('cursor-ring').style.borderColor = 'var(--cyan)';
+                document.getElementById('cursor-ring').style.width = '40px';
+                document.getElementById('cursor-ring').style.height = '40px';
+                document.getElementById('cursor-ring').style.borderWidth = '2px';
+            });
+        });
+
+        class Particle {
+            constructor() {
+                this.reset();
+            }
+            reset() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 2 + 1;
+                this.speedX = (Math.random() - 0.5) * 0.5;
+                this.speedY = (Math.random() - 0.5) * 0.5;
+                this.originalX = this.x;
+                this.originalY = this.y;
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+
+                // Mouse Repulsion
+                let dx = mouse.x - this.x;
+                let dy = mouse.y - this.y;
+                let distance = Math.sqrt(dx * dx + dy * dy);
+                if (distance < mouse.radius) {
+                    let forceDirectionX = dx / distance;
+                    let forceDirectionY = dy / distance;
+                    let force = (mouse.radius - distance) / mouse.radius;
+                    let directionX = forceDirectionX * force * 5;
+                    let directionY = forceDirectionY * force * 5;
+                    this.x -= directionX;
+                    this.y -= directionY;
+                }
+
+                if (this.x > canvas.width || this.x < 0) this.speedX *= -1;
+                if (this.y > canvas.height || this.y < 0) this.speedY *= -1;
+            }
+            draw() {
+                ctx.fillStyle = 'rgba(0, 212, 255, 0.3)';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function initParticles() {
+            particles = [];
+            let count = window.innerWidth < 768 ? 45 : 80;
+            for (let i = 0; i < count; i++) {
+                particles.push(new Particle());
+            }
+        }
+
+        function connect() {
+            for (let a = 0; a < particles.length; a++) {
+                for (let b = a; b < particles.length; b++) {
+                    let dx = particles[a].x - particles[b].x;
+                    let dy = particles[a].y - particles[b].y;
+                    let distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < 150) {
+                        ctx.strokeStyle = 'rgba(0, 212, 255, ' + (0.1 - distance/1500) + ')';
+                        ctx.lineWidth = 1;
+                        ctx.beginPath();
+                        ctx.moveTo(particles[a].x, particles[a].y);
+                        ctx.lineTo(particles[b].x, particles[b].y);
+                        ctx.stroke();
+                    }
+                }
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            connect();
+            requestAnimationFrame(animate);
+        }
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            initParticles();
+        });
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        initParticles();
+        animate();
+
+        // Typewriter Effect
+        const roles = [
+            "AI & Machine Learning Engineer",
+            "Flutter Application Developer",
+            "UI/UX Designer & Technologist"
+        ];
+        let roleIndex = 0;
+        let charIndex = 0;
+        let isDeleting = false;
+        const typewriterEl = document.getElementById('typewriter');
+
+        function type() {
+            const currentRole = roles[roleIndex];
+            if (isDeleting) {
+                typewriterEl.textContent = currentRole.substring(0, charIndex--);
+                if (charIndex < 0) {
+                    isDeleting = false;
+                    roleIndex = (roleIndex + 1) % roles.length;
+                    setTimeout(type, 500);
+                } else {
+                    setTimeout(type, 35);
+                }
+            } else {
+                typewriterEl.textContent = currentRole.substring(0, charIndex++);
+                if (charIndex > currentRole.length) {
+                    isDeleting = true;
+                    setTimeout(type, 2000); // Hold
+                } else {
+                    setTimeout(type, 60);
+                }
+            }
+        }
+        type();
+
+        // Orbit Pause on Hover
+        document.querySelectorAll('.orbit-item').forEach(item => {
+            item.addEventListener('mouseenter', () => {
+                item.parentElement.classList.add('paused');
+            });
+            item.addEventListener('mouseleave', () => {
+                item.parentElement.classList.remove('paused');
+            });
+        });
+
+        // Dynamic Position Adjustment (Orbitron scaling)
+        function updateOrbitPositions() {
+            const isMobile = window.innerWidth < 768;
+            const isSmall = window.innerWidth < 480;
+            const innerRadius = isMobile ? 110 : 160;
+            const outerRadius = isMobile ? 170 : 260;
+
+            const innerItems = document.querySelectorAll('.orbit-inner .orbit-item');
+            innerItems.forEach((item, i) => {
+                const angle = i * (360 / 3);
+                item.style.transform = `rotate(${angle}deg) translate(${innerRadius}px) rotate(${-angle}deg)`;
+            });
+
+            const outerItems = document.querySelectorAll('.orbit-outer .orbit-item');
+            outerItems.forEach((item, i) => {
+                const angle = i * (360 / 5);
+                item.style.transform = `rotate(${angle}deg) translate(${outerRadius}px) rotate(${-angle}deg)`;
+            });
+        }
+        window.addEventListener('resize', updateOrbitPositions);
+        updateOrbitPositions();
+
+    </script>
+</body>
+</html>
